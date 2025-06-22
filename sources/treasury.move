@@ -35,7 +35,7 @@ module iota_ownership_workshop::treasury {
     // === Functions ===
 
     // Creates and shares a new `Treasury` object. Requires `AdminCap` for authorization.
-    public entry fun create_treasury(
+    public entry fun new_treasury(
         _cap: &AdminCap,
         ctx: &mut TxContext
     ) {
@@ -53,7 +53,7 @@ module iota_ownership_workshop::treasury {
     // The idea of Linear Type comes from linear logic: https://en.wikipedia.org/wiki/Substructural_type_system#Linear_type_systems
     // Where we want to make on-chain assets(coins and tokens) linear in Move in order to prevent the loss of funds.
     // By Linear, we mean there's no drop and no copy for the type of asset.
-    // Therefore, we use balances and coins separately, only "committing" the balance back to the coin when manipulation's finished.
+    // Therefore, we use balances and coins separately, only "committing" a balance back to the coin when manipulation is finished.
     // You will want to split the coin yourself before you deposit it into the treasury.
     // Refer to this doc and split your coin=>call the deposit func in the same PTB. https://docs.iota.org/developer/iota-101/transactions/ptb/programmable-transaction-blocks
     public entry fun deposit(treasury: &mut Treasury, coin: Coin<IOTA>) {
@@ -62,8 +62,8 @@ module iota_ownership_workshop::treasury {
 
     // Allows the holder of an `AdminCap` to withdraw a specified `amount` from the Treasury.
     public entry fun withdraw(
-        treasury: &mut Treasury,
         _cap: &AdminCap,
+        treasury: &mut Treasury,
         amount: u64,
         ctx: &mut TxContext
     ) {
