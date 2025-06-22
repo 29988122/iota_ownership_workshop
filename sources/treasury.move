@@ -1,35 +1,47 @@
+// --- iota_ownership_workshop/sources/treasury.move ---
+
 module iota_ownership_workshop::treasury {
+    // === Imports ===
     use iota::iota::IOTA;
     use iota::balance::{Self, Balance};
     use iota::coin::{Self, Coin};
     
-    // A unique capability object that grants administrative privileges. Witness pattern / capability pattern.
-    // see https://docs.iota.org/developer/iota-101/move-overview/patterns/witness
+    // === Structs ===
+
+    // A unique capability object that grants administrative privileges.
+    // This implements the Witness / Capability Pattern.
+    // - id: The unique object ID.
+    // see: https://docs.iota.org/developer/iota-101/move-overview/patterns/witness
     public struct AdminCap has key, store {
         id: UID,
     }
 
-    // The Treasury object holds the pooled funds.
+    // The Treasury object that holds the pooled IOTA funds.
+    // - id: The unique object ID.
+    // - balance: The `Balance<IOTA>` that stores the funds.
     public struct Treasury has key, store {
         id: UID,
         balance: Balance<IOTA>,
     }
 
-    // Init function is a special function that is called when the module is created. 
-    // Only executed once, transfer the AdminCap to the creator.
+    // === Init ===
+    // Special function executed once on module publish.
+    // Mints the unique `AdminCap` and transfers it to the publisher.
     fun init(ctx: &mut TxContext) {
         let cap = AdminCap { id: object::new(ctx) };
         transfer::transfer(cap, tx_context::sender(ctx));
     }
 
-    // Creates a new, shared Treasury object. Only the address with AdminCap can call this function.
+    // === Functions ===
+
+    // Creates and shares a new `Treasury` object. Requires `AdminCap` for authorization.
     public entry fun create_treasury(
         _cap: &AdminCap,
         ctx: &mut TxContext
     ) {
-        // See https://docs.iota.org/developer/iota-101/objects/shared-owned
-        // Only newly created objects in the same transaction can be shared, in order to prevent developers' oversights.
+        // Only objects created in the current transaction can be shared directly, in order to prevent developers' oversights.
         // One must explicitly use public_share_object, to share the object that is already created.
+        // see: https://docs.iota.org/developer/iota-101/objects/shared-owned
         let treasury_object = Treasury {
             id: object::new(ctx),
             balance: balance::zero(),
@@ -48,7 +60,7 @@ module iota_ownership_workshop::treasury {
         balance::join(&mut treasury.balance, coin::into_balance(coin));
     }
 
-    // Allows the holder of the `AdminCap` to withdraw IOTA funds from the treasury.
+    // Allows the holder of an `AdminCap` to withdraw a specified `amount` from the Treasury.
     public entry fun withdraw(
         treasury: &mut Treasury,
         _cap: &AdminCap,
@@ -68,15 +80,18 @@ module iota_ownership_workshop::treasury {
         transfer::public_transfer(coin_to_transfer, tx_context::sender(ctx));
     }
     
-    // Returns the current balance of the Treasury.
+    // === Accessors ===
+
+    // Returns the current `balance` value of the Treasury.
     public fun balance(self: &Treasury): u64 {
         balance::value(&self.balance)
     }
-    // This block is only compiled when running `iota-move test`.
+
+    // === Test-Only ===
+
+    // A public wrapper for the private `init` function, used for testing purposes.
     #[test_only]
-    // This is the designated entry point for our test module.
     public fun test_init(ctx: &mut TxContext) {
         init(ctx)
     }
-
 }
