@@ -1,3 +1,5 @@
+// --- iota_ownership_workshop/tests/treasury_test.move ---
+
 #[test_only]
 module iota_ownership_workshop::treasury_test {
     use iota_ownership_workshop::treasury::{Self, AdminCap, Treasury};
@@ -30,7 +32,7 @@ module iota_ownership_workshop::treasury_test {
             next_tx(&mut scenario, ADMIN);
             // Take out the AdminCap from the sender to test the witness pattern on treasury.
             let cap = take_from_sender<AdminCap>(&scenario);
-            treasury::create_treasury(&cap, test_scenario::ctx(&mut scenario));
+            treasury::new_treasury(&cap, test_scenario::ctx(&mut scenario));
             // return the AdminCap to the sender.
             return_to_sender(&scenario, cap);
         };
@@ -50,14 +52,14 @@ module iota_ownership_workshop::treasury_test {
             return_shared(treasury);
         };
 
-        // 5. Fourth transaction: Admin withdraws funds, permission control.
+        // 4. Fourth transaction: Admin withdraws funds, permission control.
         {
             next_tx(&mut scenario, ADMIN);
             // objects must be taken out of the scenario/owner before being used.
             let mut treasury = take_shared<Treasury>(&scenario);
             let cap = take_from_sender<AdminCap>(&scenario);
             // 1000 - 700 should be 300, otherwise assert_eq will fail.
-            treasury::withdraw(&mut treasury, &cap, 700, test_scenario::ctx(&mut scenario));
+            treasury::withdraw(&cap, &mut treasury, 700, test_scenario::ctx(&mut scenario));
             test_utils::assert_eq(treasury::balance(&treasury), 300);
             // return the AdminCap to sender Admin, and the Treasury object to the global inventory.
             return_to_sender(&scenario, cap);
